@@ -1,0 +1,8 @@
+*.exe
+*.dll
+/bin
+/pkg
+.vscode/
+.env
+api.toml
+*.log
