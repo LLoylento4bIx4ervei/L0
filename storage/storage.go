@@ -4,12 +4,22 @@ import (
 	"database/sql"
 	"log"
 	"os"
+	"sync"
 
 	_ "github.com/lib/pq"
 )
 
 type Storage struct {
-	db *sql.DB
+	db    *sql.DB
+	cache map[string]*Order
+	mu    sync.RWMutex
+}
+
+func NewStorage() *Storage {
+	return &Storage{
+		cache: make(map[string]*Order),
+	}
+
 }
 
 func (storage *Storage) Open() error {

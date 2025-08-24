@@ -9,18 +9,21 @@ import (
 )
 
 func main() {
-
 	if err := godotenv.Load(); err != nil {
 		log.Fatal("Error load .env")
 	}
 
-	store := &storage.Storage{}
+	store := storage.NewStorage()
 
 	if err := store.Open(); err != nil {
 		log.Fatalf("Failed to connect to db: %v", err)
 	}
 
 	defer store.Close()
+
+	if err := store.LoadCache(); err != nil {
+		log.Fatalf("Failed to load cache: %v", err)
+	}
 
 	log.Println("Successfully connect to db")
 
@@ -79,11 +82,17 @@ func main() {
 	}
 	log.Println("Test order saved successfully")
 
-	retrievedOrder, err := store.GetOrderByUID("test123")
+	cacheOrder, err := store.GetOrderByUID("test123")
 	if err != nil {
-		log.Fatalf("Failed to get order: %v", err)
+		log.Fatalf("Failed to get order from cache: %v", err)
 	}
-	log.Printf("Retrieved order: %+v", retrievedOrder)
+	log.Printf("Retrieved from cache: %+v", cacheOrder.OrderUID)
+
+	dbOrder, err := store.GetOrderByUID("test123")
+	if err != nil {
+		log.Fatalf("Failed order from db: %v", err)
+	}
+	log.Printf("Retrived from db: %s", dbOrder.OrderUID)
 
 	log.Println("Database operations completed successfully")
 

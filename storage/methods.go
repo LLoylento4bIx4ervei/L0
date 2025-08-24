@@ -13,7 +13,7 @@ func (s *Storage) Save(order *Order) error {
 	}
 	defer tr.Rollback()
 
-	err = s.saveOrder(tr, order)
+	err = s.SaveOrder(tr, order)
 	if err != nil {
 		return err
 	}
@@ -42,7 +42,7 @@ func (s *Storage) Save(order *Order) error {
 
 }
 
-func (s *Storage) saveOrder(tr *sql.Tx, order *Order) error {
+func (s *Storage) SaveOrder(tr *sql.Tx, order *Order) error {
 	query := `
 		INSERT INTO orders (order_uid, track_number, entry, locale, internal_signature, 
                            customer_id, delivery_service, "shardkey", sm_id, date_created, "oof_shard")
@@ -73,7 +73,12 @@ func (s *Storage) saveOrder(tr *sql.Tx, order *Order) error {
 		order.DateCreated,
 		order.OofShard,
 	)
-	return err
+	if err != nil {
+		return err
+	}
+	s.UpdateCache(order)
+	log.Printf("order %s saved", order.OrderUID)
+	return nil
 }
 
 func (s *Storage) saveDelivery(tr *sql.Tx, order *Order) error {
@@ -317,4 +322,38 @@ func (s *Storage) AllOrders() ([]Order, error) {
 		orders = append(orders, *order)
 	}
 	return orders, nil
+}
+
+func (s *Storage) LoadCache() error {
+	orders, err := s.AllOrders()
+	if err != nil {
+		return err
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	for i := range orders {
+		s.cache[orders[i].OrderUID] = &orders[i]
+	}
+
+	log.Printf("Loaded %d orders into cache", len(orders))
+	return nil
+}
+
+func (s *Storage) GetOrderCache(uid string) (*Order, error) {
+	s.mu.RLock()
+	order, exists := s.cache[uid]
+	s.mu.RUnlock()
+
+	if !exists {
+		return nil, fmt.Errorf("order not found")
+	}
+	return order, nil
+}
+
+func (s *Storage) UpdateCache(order *Order) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.cache[order.OrderUID] = order
 }
