@@ -39,3 +39,7 @@ func (storage *Storage) Open() error {
 func (storage *Storage) Close() {
 	storage.db.Close()
 }
+
+func (s *Storage) GetDB() *sql.DB {
+	return s.db
+}
