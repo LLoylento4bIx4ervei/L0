@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Viewer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .search-box {
+            margin-bottom: 20px;
+        }
+        input[type="text"] {
+            padding: 8px;
+            width: 300px;
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .order-details {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-top: 20px;
+            background-color: #f9f9f9;
+        }
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Order Viewer</h1>
+    
+    <div class="search-box">
+        <input type="text" id="orderId" placeholder="Enter Order ID">
+        <button onclick="loadOrder()">Load Order</button>
+    </div>
+    
+    <div id="error" class="error"></div>
+    
+    <div id="orderDetails" class="order-details" style="display: none;">
+        <h2>Order Details</h2>
+        <pre id="orderData"></pre>
+    </div>
+
+    <script>
+        async function loadOrder() {
+            const orderId = document.getElementById('orderId').value;
+            const errorDiv = document.getElementById('error');
+            const orderDetails = document.getElementById('orderDetails');
+            const orderData = document.getElementById('orderData');
+            
+            errorDiv.textContent = '';
+            orderDetails.style.display = 'none';
+            
+            if (!orderId) {
+                errorDiv.textContent = 'Please enter an Order ID';
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/order/${orderId}`);
+                if (!response.ok) {
+                    throw new Error(`Order not found: ${response.status}`);
+                }
+                
+                const order = await response.json();
+                orderData.textContent = JSON.stringify(order, null, 2);
+                orderDetails.style.display = 'block';
+            } catch (error) {
+                errorDiv.textContent = error.message;
+            }
+        }
+        
+        
+        document.getElementById('orderId').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                loadOrder();
+            }
+        });
+    </script>
+</body>
+</html>
